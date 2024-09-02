@@ -1,6 +1,6 @@
 "use client"
 import { UserButton } from '@clerk/nextjs'
-import { Layout, LayoutGrid, PiggyBank, ReceiptText } from 'lucide-react'
+import { ChartSpline, Layout, LayoutGrid, PiggyBank, ReceiptText } from 'lucide-react'
 import Image from 'next/image'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
@@ -25,6 +25,12 @@ function SideNav() {
             name:'Expenses',
             icon: ReceiptText,
             path:'/dashboard/expenses'
+        },
+        {
+            id:4,
+            name:'Data Insights',
+            icon: ChartSpline,
+            path:'/dashboard/data-insights'
         }
     ]
     const path=usePathname();
