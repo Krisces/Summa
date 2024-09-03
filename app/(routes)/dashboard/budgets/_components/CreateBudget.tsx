@@ -19,7 +19,7 @@ import { db } from '@/utils/dbConfig'
 import { toast } from 'sonner'
   
 
-function CreateBudget() {
+function CreateBudget({refreshData}:{refreshData: () => void}) {
     
     const [emojiIcon,setEmojiIcon]=useState('😃');
     const[openEmojiPicker,setOpenEmojiPicker]=useState(false);
@@ -43,6 +43,7 @@ function CreateBudget() {
 
         if(result)
         {
+            refreshData()
             toast('New Budget Created!')
         }
     }
@@ -66,7 +67,7 @@ function CreateBudget() {
                     onClick={()=>setOpenEmojiPicker(!openEmojiPicker)}>
                         {emojiIcon}
                     </Button>
-                    <div className='absolute'>
+                    <div className='absolute z-20'>
                         <EmojiPicker
                         open={openEmojiPicker}
                         onEmojiClick={(e)=>{
