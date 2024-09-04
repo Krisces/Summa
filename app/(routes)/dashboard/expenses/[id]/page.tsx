@@ -8,7 +8,7 @@ import React, { useEffect, useState } from 'react'
 import BudgetItem from '../../budgets/_components/BudgetItem'
 import AddExpense from '../_components/AddExpense'
 
-function ExpensesScreen({ params }: { params: { id: number } }) {
+function ExpensesScreen({ params }: any) {
 
     const { user } = useUser();
     const [budgetInfo, setBudgetInfo] = useState<any>(null);
@@ -44,7 +44,10 @@ function ExpensesScreen({ params }: { params: { id: number } }) {
                     <div className='h-[150px] w-full bg-slate-200 rounded-lg animate-pulse'>
                     </div>
                 )}
-                <AddExpense/>
+                <AddExpense budgetId={params.id}
+                user={user}
+                refreshData={()=>getBudgetInfo()}
+                />
             </div>
         </div>
     );

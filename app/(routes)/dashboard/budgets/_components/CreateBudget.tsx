@@ -19,7 +19,7 @@ import { db } from '@/utils/dbConfig'
 import { toast } from 'sonner'
   
 
-function CreateBudget({refreshData}:{refreshData: () => void}) {
+function CreateBudget({refreshData}:any) {
     
     const [emojiIcon,setEmojiIcon]=useState('😃');
     const[openEmojiPicker,setOpenEmojiPicker]=useState(false);
@@ -52,7 +52,7 @@ function CreateBudget({refreshData}:{refreshData: () => void}) {
     <div>
         <Dialog>
         <DialogTrigger asChild>
-            <div className='bg-slate-100 p-10 rounded-md items-center flex flex-col border-2 border-dashed cursor-pointer hover:shadow-md'>
+            <div className='bg-slate-100 p-10 rounded-md items-center flex flex-col border-2 border-dashed cursor-pointer hover:shadow-md h-[170px]'>
                 <h2 className='text-3xl'>+</h2>
                 <h2>Create Budget</h2>
             </div>
