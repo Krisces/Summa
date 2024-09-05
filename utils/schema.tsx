@@ -15,16 +15,3 @@ export const Expenses = pgTable('expenses', {
     budgetId: integer('budgetId').references(() => Budgets.id),
     createdAt: varchar('createdAt').notNull()
 });
-
-
-export const Category = pgTable('category', {
-    createdAt: timestamp('createdAt', { withTimezone: true }).defaultNow(),  // DateTime with default `now()`
-    name: varchar('name').notNull(),  // String type
-    userId: varchar('userId').notNull(),  // String type
-    icon: varchar('icon').notNull(),  // String type
-    type: varchar('type').notNull().default('income'),  // String type with default value 'income'
-  },
-  // Composite unique key constraint for (name, userId, type)
-  (category) => ({
-    uniqueCategory: uniqueIndex('unique_category').on(category.name, category.userId, category.type),
-  }));
