@@ -1,6 +1,6 @@
 "use client"
 import { UserButton } from '@clerk/nextjs'
-import { ChartSpline, Layout, LayoutGrid, PiggyBank, ReceiptText } from 'lucide-react'
+import { ChartSpline, LayoutGrid, LibraryBig, ReceiptText } from 'lucide-react'
 import Image from 'next/image'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
@@ -16,8 +16,8 @@ function SideNav() {
         },
         {
             id:2,
-            name:'Budgets',
-            icon:PiggyBank,
+            name:'Categories',
+            icon: LibraryBig,
             path:'/dashboard/budgets'
         },
         {
