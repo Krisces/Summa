@@ -16,26 +16,29 @@ function DashboardLayout({ children }: DashboardLayoutProps) {
 
   const {user}=useUser();
   const router=useRouter();
+  
   useEffect(()=>{
-    user&&checkUserBudgets();
+    user && checkUserBudgets();
   },[user])
+  
   const checkUserBudgets=async()=>{
     const result = await db.select()
-    .from(Budgets)
-    .where(eq(Budgets.createdBy,user?.primaryEmailAddress?.emailAddress as string))
-    if (result.length==0)
-    {
+      .from(Budgets)
+      .where(eq(Budgets.createdBy, user?.primaryEmailAddress?.emailAddress as string))
+      
+    if (result.length == 0) {
       router.replace('/dashboard/budgets')
     }
     console.log(result);
   }
+  
   return (
     <div>
-      <div className='fixed md:w-64 hidden md:block'>
-        <SideNav/>
+      <div className='fixed md:w-64 hidden md:block z-10'>
+        <SideNav />
       </div>
       <div className='md:ml-64'>
-        <DashboardHeader/>
+        <DashboardHeader />
         {children}
       </div>
     </div>
