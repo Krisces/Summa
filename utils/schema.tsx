@@ -5,7 +5,7 @@ export const Categories = pgTable('categories', {
     id: serial('id').primaryKey(),
     name: varchar('name').notNull(),
     icon: varchar('icon').notNull(),
-    budgetAmount: numeric('budgetAmount'),  // Nullable budget amount
+    budgetAmount: numeric('budgetAmount'),
     createdBy: varchar('createdBy').notNull()
 });
 
@@ -14,7 +14,8 @@ export const Income = pgTable('income', {
     id: serial('id').primaryKey(),
     name: varchar('name').notNull(),
     amount: numeric('amount').notNull().default('0'),
-    transactionDate: varchar('transactionDate').notNull()
+    transactionDate: varchar('transactionDate').notNull(),
+    createdBy: varchar('createdBy').notNull() 
 });
 
 // Expenses Table

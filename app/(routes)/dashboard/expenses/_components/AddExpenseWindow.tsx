@@ -125,9 +125,7 @@ function AddExpense({ categoryId, user, refreshData }: AddExpenseProps) {
                         setOpen(false);
                       }}
                     >
-                      <span className="mr-2 text-lg">
-                        <p className={category.icon}></p> {/* Render the icon */}
-                      </span>
+                      {category.icon}
                       {category.label}
                       <Check
                         className={cn(

@@ -39,10 +39,11 @@ function AddIncome() {
             const result = await db.insert(Income).values({
                 name: name,
                 amount: amount,
-                transactionDate: formattedDate,  // Use the formatted date
+                transactionDate: formattedDate, 
+                createdBy:user?.primaryEmailAddress?.emailAddress as string,
             }).returning({ insertedId: Income.id });
 
-            console.log("Income added with ID:", result);  // Log the inserted ID for debugging
+            console.log("Income added with ID:", result);
         }
     };
 

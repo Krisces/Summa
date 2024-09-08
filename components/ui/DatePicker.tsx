@@ -14,38 +14,39 @@ import {
 } from "@/components/ui/popover"
 
 interface DatePickerProps {
-    onDateChange: (date: Date | undefined) => void; // Update the prop to accept a function
+  onDateChange: (date: Date | undefined) => void; // Added type for onDateChange
 }
 
 export function DatePicker({ onDateChange }: DatePickerProps) {
-    const [date, setDate] = React.useState<Date | undefined>(undefined);
+  const [date, setDate] = React.useState<Date>()
 
-    React.useEffect(() => {
-        onDateChange(date); // Call the onDateChange function whenever date changes
-    }, [date, onDateChange]);
+  // Call onDateChange when date changes
+  React.useEffect(() => {
+    onDateChange(date);
+  }, [date, onDateChange]);
 
-    return (
-        <Popover>
-            <PopoverTrigger asChild>
-                <Button
-                    variant={"outline"}
-                    className={cn(
-                        "w-[280px] justify-start text-left font-normal",
-                        !date && "text-muted-foreground"
-                    )}
-                >
-                    <CalendarIcon className="mr-2 h-4 w-4" />
-                    {date ? format(date, "PPP") : <span>Pick a date</span>}
-                </Button>
-            </PopoverTrigger>
-            <PopoverContent className="w-auto p-0">
-                <Calendar
-                    mode="single"
-                    selected={date}
-                    onSelect={setDate}
-                    initialFocus
-                />
-            </PopoverContent>
-        </Popover>
-    )
+  return (
+    <Popover>
+      <PopoverTrigger asChild>
+        <Button
+          variant={"outline"}
+          className={cn(
+            "w-[280px] justify-start text-left font-normal",
+            !date && "text-muted-foreground"
+          )}
+        >
+          <CalendarIcon className="mr-2 h-4 w-4" />
+          {date ? format(date, "PPP") : <span>Pick a date</span>}
+        </Button>
+      </PopoverTrigger>
+      <PopoverContent className="w-auto p-0">
+        <Calendar
+          mode="single"
+          selected={date}
+          onSelect={setDate}
+          initialFocus
+        />
+      </PopoverContent>
+    </Popover>
+  )
 }
