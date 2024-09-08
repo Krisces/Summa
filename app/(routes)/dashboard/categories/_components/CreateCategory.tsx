@@ -1,8 +1,5 @@
-"use clinet"
-import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
-import { PenBox } from 'lucide-react'
-import React, { useEffect, useState } from 'react'
+"use client"
+import React, { useState } from 'react'
 import {
     Dialog,
     DialogClose,
@@ -14,42 +11,40 @@ import {
     DialogTrigger,
   } from "@/components/ui/dialog"
 import EmojiPicker from 'emoji-picker-react'
+import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
+import { Categories } from '@/utils/schema'
 import { useUser } from '@clerk/nextjs'
-import { Budgets } from '@/utils/schema'
 import { db } from '@/utils/dbConfig'
-import { eq } from 'drizzle-orm'
 import { toast } from 'sonner'
+  
 
-function EditBudget({budgetInfo, refreshData}:any) {
-
-    const [emojiIcon,setEmojiIcon]=useState('');
+function CreateCategory({refreshData}:any) {
+    
+    const [emojiIcon,setEmojiIcon]=useState('😃');
     const[openEmojiPicker,setOpenEmojiPicker]=useState(false);
 
     const [name, setName] = useState<string>('');
-    const [amount, setAmount] = useState<string>('');
+    const [budgetAmount, setAmount] = useState<string | null>(null);
 
     const {user}=useUser();
 
-    useEffect(()=>{
-        if(budgetInfo)
-        {
-            setEmojiIcon(budgetInfo?.icon)
-            setAmount(budgetInfo.amount)
-            setName(budgetInfo.name)
-        }
-    },[budgetInfo])
-    const onUpdateBudget=async()=>{
-        const result = await db.update(Budgets).set({
+    /**
+     * User to Create New Category
+     */
+    const onCreateCategory=async()=>{
+        const result=await db.insert(Categories)
+        .values({
             name:name,
-            amount:amount,
-            icon:emojiIcon
-        }).where(eq(Budgets.id,budgetInfo.id))
-        .returning();
+            createdBy:user?.primaryEmailAddress?.emailAddress as string,
+            icon:emojiIcon,
+            budgetAmount: budgetAmount,
+        }).returning({insertedId:Categories.id})
 
         if(result)
         {
             refreshData()
-            toast('Budget Updated!')
+            toast('New Category Created!')
         }
     }
 
@@ -57,11 +52,14 @@ function EditBudget({budgetInfo, refreshData}:any) {
     <div>
         <Dialog>
         <DialogTrigger asChild>
-            <Button className='flex gap-2'> <PenBox/>Edit</Button>
+            <div className='bg-slate-100 p-10 rounded-md items-center flex flex-col border-2 border-dashed cursor-pointer hover:shadow-md h-[170px]'>
+                <h2 className='text-3xl'>+</h2>
+                <h2>Create Categories</h2>
+            </div>
         </DialogTrigger>
         <DialogContent>
             <DialogHeader>
-            <DialogTitle>Update Budget</DialogTitle>
+            <DialogTitle>Create New Category</DialogTitle>
             <DialogDescription>
                 <div className='mt-5'>
                     <Button variant="outline"
@@ -80,12 +78,11 @@ function EditBudget({budgetInfo, refreshData}:any) {
                     </div>
                     <div className='mt-3'>
                         <h2 className='text-black font-medium my-1'>
-                            Budget Name
+                            Category Name
                         </h2>
                         <Input 
                         type="string"
                         placeholder='e.g. Groceries'
-                        defaultValue={budgetInfo?.name}
                         onChange={(e)=>{setName(e.target.value)}}
                         />
                     </div>
@@ -96,7 +93,6 @@ function EditBudget({budgetInfo, refreshData}:any) {
                         <Input 
                         type="number"
                         placeholder='e.g. 600'
-                        defaultValue={budgetInfo?.amount}
                         onChange={(e)=>{setAmount(e.target.value)
                         }}
                         />
@@ -107,16 +103,17 @@ function EditBudget({budgetInfo, refreshData}:any) {
             </DialogHeader>
             <DialogFooter className="sm:justify-start">
                 <DialogClose asChild>
-                    <Button disabled={!(name&&amount)} className='mt-6 w-full'
-                    onClick={()=>onUpdateBudget()}>
-                        Update Budget
+                    <Button disabled={!(name)} className='mt-6 w-full'
+                    onClick={()=>onCreateCategory()}>
+                        Create Category
                     </Button>
                 </DialogClose>
                 </DialogFooter>
         </DialogContent>
         </Dialog>
+
     </div>
   )
 }
 
-export default EditBudget
+export default CreateCategory

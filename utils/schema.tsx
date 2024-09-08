@@ -1,17 +1,29 @@
-import { integer, numeric, pgTable, timestamp, serial, varchar, uniqueIndex } from "drizzle-orm/pg-core";
+import { integer, numeric, pgTable, serial, varchar } from "drizzle-orm/pg-core";
 
-export const Budgets = pgTable('budgets', {
+// Categories Table with Budget Amount
+export const Categories = pgTable('categories', {
     id: serial('id').primaryKey(),
     name: varchar('name').notNull(),
-    amount: varchar('amount').notNull(),
-    icon: varchar('icon'),
+    icon: varchar('icon').notNull(),
+    budgetAmount: numeric('budgetAmount'),  // Nullable budget amount
     createdBy: varchar('createdBy').notNull()
 });
 
+// Income Table
+export const Income = pgTable('income', {
+    id: serial('id').primaryKey(),
+    name: varchar('name').notNull(),
+    amount: numeric('amount').notNull().default('0'),
+    transactionDate: varchar('transactionDate').notNull()
+});
+
+// Expenses Table
 export const Expenses = pgTable('expenses', {
     id: serial('id').primaryKey(),
     name: varchar('name').notNull(),
     amount: numeric('amount').notNull().default('0'),
-    budgetId: integer('budgetId').references(() => Budgets.id),
+    categoryId: integer('categoryId')
+        .references(() => Categories.id)
+        .notNull(),  // Reference to the category
     createdAt: varchar('createdAt').notNull()
 });

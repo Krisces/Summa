@@ -1,37 +1,49 @@
 "use client"
-import { useUser } from '@clerk/nextjs'
-import React, { useState } from 'react'
-import { Button } from '@/components/ui/button'
-import Datepicker from "react-tailwindcss-datepicker";
+import React, { useEffect, useState } from 'react'
+import Headline from './_components/Headline'
+import CardInfo from './_components/CardInfo'
+import { useUser } from '@clerk/nextjs';
+import { db } from '@/utils/dbConfig';
+import { Categories, Expenses } from '@/utils/schema';
+import { desc, eq, getTableColumns, sql } from 'drizzle-orm';
 
-function Dashboard() {
+function page() {
+
+  const [categoryList, setCategoryList] = useState<any[]>([]);
   const { user } = useUser();
+  useEffect(() => {
+    user && getCategoryList();
+  }, [user])
 
-  const [value, setValue] = useState({
-    startDate: null,
-    endDate: null
-  });
-  
+  /**
+   * Used to get budget list
+   */
+  const getCategoryList = async () => {
+
+    const result = await db.select({
+      ...getTableColumns(Categories),
+      totalSpend: sql`sum(${Expenses.amount})`.mapWith(Number),
+      totalItem: sql`count(${Expenses.id})`.mapWith(Number)
+    })
+      .from(Categories)
+      .leftJoin(Expenses, eq(Categories.id, Expenses.categoryId))
+      .where(eq(Categories.createdBy, user?.primaryEmailAddress?.emailAddress as string))
+      .groupBy(Categories.id)
+      .orderBy(desc(Categories.id));
+
+    setCategoryList(result);
+  }
+
   return (
-    <div className='p-10'>
-      <div className='flex items-center justify-between'>
-        <div className=''>
-          <h2 className='font-bold text-3xl'>{`Hi, ${user?.username}`}</h2>
-          <p className='text-gray-500'>Here is what is happening with your money. Let us manage your expenses</p>
-        </div>
-        <div className='flex items-center gap-10 relative'>
-          {/* Ensure the DateRangePicker has enough space and proper positioning */}
-          <div>
-            <Datepicker value={value} onChange={newValue => setValue(newValue as any)} />
-          </div>
-          <div className='flex gap-2'>
-            <Button className=' text-white'>Add Income</Button>
-            <Button className=' text-white'>Add Expense</Button>
-          </div>
-        </div>
+    <div>
+      <div>
+        <Headline />
+      </div>
+      <div className='px-10'>
+        <CardInfo budgetList={categoryList} />
       </div>
     </div>
   )
 }
 
-export default Dashboard
+export default page

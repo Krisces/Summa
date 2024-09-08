@@ -3,7 +3,7 @@ import React, { ReactNode, useEffect } from 'react';
 import SideNav from './_components/SideNav';
 import DashboardHeader from './_components/DashboardHeader';
 import { db } from '@/utils/dbConfig';
-import { Budgets } from '@/utils/schema';
+import { Categories } from '@/utils/schema';
 import { useUser } from '@clerk/nextjs';
 import { eq } from 'drizzle-orm';
 import { useRouter } from 'next/navigation';
@@ -23,11 +23,11 @@ function DashboardLayout({ children }: DashboardLayoutProps) {
   
   const checkUserBudgets=async()=>{
     const result = await db.select()
-      .from(Budgets)
-      .where(eq(Budgets.createdBy, user?.primaryEmailAddress?.emailAddress as string))
+      .from(Categories)
+      .where(eq(Categories.createdBy, user?.primaryEmailAddress?.emailAddress as string))
       
     if (result.length == 0) {
-      router.replace('/dashboard/budgets')
+      router.replace('/dashboard/categories')
     }
     console.log(result);
   }
@@ -40,6 +40,8 @@ function DashboardLayout({ children }: DashboardLayoutProps) {
       <div className='md:ml-64'>
         <DashboardHeader />
         {children}
+      </div>
+      <div>
       </div>
     </div>
   );

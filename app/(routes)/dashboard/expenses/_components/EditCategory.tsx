@@ -1,5 +1,8 @@
-"use client"
-import React, { useState } from 'react'
+"use clinet"
+import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
+import { PenBox } from 'lucide-react'
+import React, { useEffect, useState } from 'react'
 import {
     Dialog,
     DialogClose,
@@ -11,40 +14,42 @@ import {
     DialogTrigger,
   } from "@/components/ui/dialog"
 import EmojiPicker from 'emoji-picker-react'
-import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
-import { Budgets } from '@/utils/schema'
 import { useUser } from '@clerk/nextjs'
+import { Categories } from '@/utils/schema'
 import { db } from '@/utils/dbConfig'
+import { eq } from 'drizzle-orm'
 import { toast } from 'sonner'
-  
 
-function CreateBudget({refreshData}:any) {
-    
-    const [emojiIcon,setEmojiIcon]=useState('😃');
+function EditCategory({categoryInfo, refreshData}:any) {
+
+    const [emojiIcon,setEmojiIcon]=useState('');
     const[openEmojiPicker,setOpenEmojiPicker]=useState(false);
 
     const [name, setName] = useState<string>('');
-    const [amount, setAmount] = useState<string>('');
+    const [budgetAmount, setBudgetAmount] = useState<string>('');
 
     const {user}=useUser();
 
-    /**
-     * User to Create New Budget
-     */
-    const onCreateBudget=async()=>{
-        const result=await db.insert(Budgets)
-        .values({
+    useEffect(()=>{
+        if(categoryInfo)
+        {
+            setEmojiIcon(categoryInfo?.icon)
+            setBudgetAmount(categoryInfo.budgetAmount)
+            setName(categoryInfo.name)
+        }
+    },[categoryInfo])
+    const onUpdateCategory=async()=>{
+        const result = await db.update(Categories).set({
             name:name,
-            amount:amount,
-            createdBy:user?.primaryEmailAddress?.emailAddress as string,
+            budgetAmount:budgetAmount,
             icon:emojiIcon
-        }).returning({insertedId:Budgets.id})
+        }).where(eq(Categories.id,categoryInfo.id))
+        .returning();
 
         if(result)
         {
             refreshData()
-            toast('New Budget Created!')
+            toast('Category Updated!')
         }
     }
 
@@ -52,14 +57,11 @@ function CreateBudget({refreshData}:any) {
     <div>
         <Dialog>
         <DialogTrigger asChild>
-            <div className='bg-slate-100 p-10 rounded-md items-center flex flex-col border-2 border-dashed cursor-pointer hover:shadow-md h-[170px]'>
-                <h2 className='text-3xl'>+</h2>
-                <h2>Create Budget</h2>
-            </div>
+            <Button className='flex gap-2'> <PenBox/>Edit</Button>
         </DialogTrigger>
         <DialogContent>
             <DialogHeader>
-            <DialogTitle>Create New Budget</DialogTitle>
+            <DialogTitle>Update Category</DialogTitle>
             <DialogDescription>
                 <div className='mt-5'>
                     <Button variant="outline"
@@ -78,11 +80,12 @@ function CreateBudget({refreshData}:any) {
                     </div>
                     <div className='mt-3'>
                         <h2 className='text-black font-medium my-1'>
-                            Budget Name
+                            Category Name
                         </h2>
                         <Input 
                         type="string"
                         placeholder='e.g. Groceries'
+                        defaultValue={categoryInfo?.name}
                         onChange={(e)=>{setName(e.target.value)}}
                         />
                     </div>
@@ -93,7 +96,8 @@ function CreateBudget({refreshData}:any) {
                         <Input 
                         type="number"
                         placeholder='e.g. 600'
-                        onChange={(e)=>{setAmount(e.target.value)
+                        defaultValue={categoryInfo?.amount}
+                        onChange={(e)=>{setBudgetAmount(e.target.value)
                         }}
                         />
                     </div>
@@ -103,17 +107,16 @@ function CreateBudget({refreshData}:any) {
             </DialogHeader>
             <DialogFooter className="sm:justify-start">
                 <DialogClose asChild>
-                    <Button disabled={!(name&&amount)} className='mt-6 w-full'
-                    onClick={()=>onCreateBudget()}>
-                        Create Budget
+                    <Button disabled={!(name)} className='mt-6 w-full'
+                    onClick={()=>onUpdateCategory()}>
+                        Update Category
                     </Button>
                 </DialogClose>
                 </DialogFooter>
         </DialogContent>
         </Dialog>
-
     </div>
   )
 }
 
-export default CreateBudget
+export default EditCategory

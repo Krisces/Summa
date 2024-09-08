@@ -18,7 +18,7 @@ function SideNav() {
             id:2,
             name:'Categories',
             icon: LibraryBig,
-            path:'/dashboard/budgets'
+            path:'/dashboard/categories'
         },
         {
             id:3,

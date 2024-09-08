@@ -1,11 +1,10 @@
 "use client"
 import { db } from '@/utils/dbConfig'
-import { Budgets } from '@/utils/schema'
+import { Categories } from '@/utils/schema'
 import { Expenses } from '@/utils/schema'
 import { useUser } from '@clerk/nextjs'
 import { desc, eq, getTableColumns, sql } from 'drizzle-orm'
 import React, { useEffect, useState } from 'react'
-import BudgetItem from '../../budgets/_components/BudgetItem'
 import AddExpense from '../_components/AddExpense'
 import ExpenseListTable from '../_components/ExpenseListTable'
 import { Button } from '@/components/ui/button'
@@ -23,39 +22,40 @@ import {
 } from "@/components/ui/alert-dialog"
 import { toast } from 'sonner'
 import { useRouter } from 'next/navigation'
-import EditBudget from '../_components/EditBudget'
+import EditCategory from '../_components/EditCategory'
+import CategorytItem from '../../categories/_components/CategoryItem'
 
 
 function ExpensesScreen({ params }: any) {
 
     const { user } = useUser();
-    const [budgetInfo, setBudgetInfo] = useState<any>(null);
+    const [categoryInfo, setCategoryInfo] = useState<any>(null);
     const [expensesList, setExpensesList] = useState<any[]>([]);
     const route = useRouter();
 
     useEffect(() => {
 
-        user && getBudgetInfo();
+        user && getCategoryInfo();
     }, [user]);
 
     /**
-     * Get Budget Information
+     * Get Category Information
      */
-    const getBudgetInfo = async () => {
+    const getCategoryInfo = async () => {
         const result = await db
             .select({
-                ...getTableColumns(Budgets),
+                ...getTableColumns(Categories),
                 totalSpend: sql`sum(${Expenses.amount})`.mapWith(Number),
                 totalItem: sql`count(${Expenses.id})`.mapWith(Number),
             })
-            .from(Budgets)
-            .leftJoin(Expenses, eq(Budgets.id, Expenses.budgetId))
+            .from(Categories)
+            .leftJoin(Expenses, eq(Categories.id, Expenses.categoryId))
             .where(
-                sql`${Budgets.createdBy} = ${user?.primaryEmailAddress?.emailAddress as string} AND ${Budgets.id} = ${params.id}`
+                sql`${Categories.createdBy} = ${user?.primaryEmailAddress?.emailAddress as string} AND ${Categories.id} = ${params.id}`
             )
-            .groupBy(Budgets.id);
+            .groupBy(Categories.id);
 
-        setBudgetInfo(result['0']);
+        setCategoryInfo(result['0']);
         getExpensesList();
     };
 
@@ -66,28 +66,28 @@ function ExpensesScreen({ params }: any) {
         const result = await db
             .select()
             .from(Expenses)
-            .where(eq(Expenses.budgetId, params.id))
+            .where(eq(Expenses.categoryId, params.id))
             .orderBy(desc(Expenses.id));
 
         setExpensesList(result);
     };
 
     /**
-     * Use to Delete Budget
+     * Use to Delete Category
      */
-    const deleteBudget = async () => {
+    const deleteCategory = async () => {
 
         const deleteExpenseResult = await db.delete(Expenses)
-            .where(eq(Expenses.budgetId, params.id))
+            .where(eq(Expenses.categoryId, params.id))
             .returning()
 
         if (deleteExpenseResult) {
-            const result = await db.delete(Budgets)
-                .where(eq(Budgets.id, params.id))
+            const result = await db.delete(Categories)
+                .where(eq(Categories.id, params.id))
                 .returning();
         }
-        toast('Budget Deleted!');
-        route.replace('/dashboard/budgets')
+        toast('Category Deleted!');
+        route.replace('/dashboard/categories')
     }
 
     return (
@@ -98,7 +98,7 @@ function ExpensesScreen({ params }: any) {
                     My Expenses
                 </span>
                 <div className='flex gap-2 items-center'>
-                <EditBudget budgetInfo={budgetInfo} refreshData={()=>getBudgetInfo()}/>
+                <EditCategory categoryInfo={categoryInfo} refreshData={()=>getCategoryInfo()}/>
                 <AlertDialog>
                     <AlertDialogTrigger asChild>
                         <Button className='flex gap-2' variant="destructive"> <Trash /> Delete</Button>
@@ -113,28 +113,28 @@ function ExpensesScreen({ params }: any) {
                         </AlertDialogHeader>
                         <AlertDialogFooter>
                             <AlertDialogCancel>Cancel</AlertDialogCancel>
-                            <AlertDialogAction onClick={() => deleteBudget()}>Continue</AlertDialogAction>
+                            <AlertDialogAction onClick={() => deleteCategory()}>Continue</AlertDialogAction>
                         </AlertDialogFooter>
                     </AlertDialogContent>
                 </AlertDialog>
                 </div>
             </h2>
             <div className='grid grid-cols-1 md:grid-cols-2 mt-6 gap-5'>
-                {budgetInfo ? (
-                    <BudgetItem budget={budgetInfo} />
+                {categoryInfo ? (
+                    <CategorytItem category={categoryInfo} />
                 ) : (
                     <div className='h-[150px] w-full bg-slate-200 rounded-lg animate-pulse'>
                     </div>
                 )}
-                <AddExpense budgetId={params.id}
+                <AddExpense categoryId={params.id}
                     user={user}
-                    refreshData={() => getBudgetInfo()}
+                    refreshData={() => getCategoryInfo()}
                 />
             </div>
             <div className='mt-4'>
                 <h2 className='font-bold text-lg'>Latest Expenses</h2>
                 <ExpenseListTable expensesList={expensesList}
-                    refreshData={() => getBudgetInfo()} />
+                    refreshData={() => getCategoryInfo()} />
             </div>
         </div>
     );
