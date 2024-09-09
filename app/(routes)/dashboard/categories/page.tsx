@@ -1,15 +1,15 @@
 import React from 'react'
-import BudgetList from './_components/CategoryList'
+import CategoryList from './_components/CategoryList'
 
-function Budgets() {
+function Catgories() {
   return (
     <div className='p-10'>
       <h2 className='font-bold text-3xl'>
-        My Budgets
+        My Categories
       </h2>
-      <BudgetList/>
+      <CategoryList/>
     </div>
   )
 }
 
-export default Budgets
+export default Catgories

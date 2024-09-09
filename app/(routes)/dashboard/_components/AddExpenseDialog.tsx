@@ -41,7 +41,7 @@ interface AddExpenseProps {
     refreshData: any;
 }
 
-function AddExpenseDialog() {
+function AddExpenseDialog({refreshData}:any) {
 
     const [name, setName] = useState<string>('');
     const [amount, setAmount] = useState<string>('');
@@ -88,6 +88,7 @@ function AddExpenseDialog() {
 
         console.log(result);
         if (result) {
+            refreshData();
             toast('New Expense Added!');
         }
     };

@@ -19,8 +19,9 @@ import { db } from '@/utils/dbConfig';
 import { Income } from '@/utils/schema';
 import { DatePicker } from "@/components/ui/DatePicker"
 import moment from 'moment';
+import { toast } from "sonner"
 
-function AddIncome() {
+function AddIncome({refreshData}:any) {
 
     const [name, setName] = useState<string>('');
     const [amount, setAmount] = useState<string>('');
@@ -44,6 +45,10 @@ function AddIncome() {
             }).returning({ insertedId: Income.id });
 
             console.log("Income added with ID:", result);
+            if (result) {
+                refreshData();
+                toast('New Income Added!');
+              }
         }
     };
 
