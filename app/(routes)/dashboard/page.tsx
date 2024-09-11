@@ -15,6 +15,7 @@ import { desc, eq, getTableColumns, sql } from 'drizzle-orm';
 import moment from 'moment';
 import CategoryStats from './_components/CategoryStats';
 import CategoryChart from './_components/CategoryChart';
+import HistoryPeriodSelector from './_components/HistoryPeriodSelector';
 
 function Page() {
   const { user } = useUser();
@@ -25,18 +26,23 @@ function Page() {
     from: startOfMonth(new Date()),
     to: new Date(),
   });
-  const [loading, setLoading] = useState<boolean>(true); // Add loading state
+  const [loading, setLoading] = useState<boolean>(true);
+  const [period, setPeriod] = useState<{ year: number; month: number }>({
+    year: new Date().getFullYear(),
+    month: new Date().getMonth() + 1
+  });
+  const [timeframe, setTimeframe] = useState<'year' | 'month'>('month');
+  const [years, setYears] = useState<number[]>(Array.from({ length: 10 }, (_, i) => new Date().getFullYear() - i));
 
   useEffect(() => {
     if (user) {
-      setLoading(true); // Set loading to true before fetching data
+      setLoading(true);
       Promise.all([getCategoryList(), getTotalIncome()]).finally(() => {
-        setLoading(false); // Set loading to false after data is fetched
+        setLoading(false);
       });
     }
   }, [user, dateRange]);
 
-  // Fetch category list with total expenses in the selected date range
   const getCategoryList = async () => {
     const result = await db.select({
       ...getTableColumns(Categories),
@@ -56,7 +62,7 @@ function Page() {
       )
       .groupBy(Categories.id)
       .orderBy(desc(Categories.id))
-      .execute(); // Execute query
+      .execute();
 
     setCategoryList(result);
 
@@ -64,7 +70,6 @@ function Page() {
     setTotalExpenses(totalExpenses);
   };
 
-  // Fetch total income in the selected date range
   const getTotalIncome = async () => {
     const result = await db.select({
       totalIncome: sql`COALESCE(SUM(${Income.amount}), 0)`.mapWith(Number)
@@ -75,63 +80,76 @@ function Page() {
             AND ${Income.transactionDate} >= ${moment(dateRange.from).format('MM-DD-YYYY')}
             AND ${Income.transactionDate} <= ${moment(dateRange.to).format('MM-DD-YYYY')}`
       )
-      .execute(); // Execute query
+      .execute();
 
     setTotalIncome(result[0]?.totalIncome ?? 0);
   };
 
   return (
     <div>
-      <div className='p-10'>
-        <div className='flex flex-col md:flex-row items-start md:items-center md:justify-between'>
-          <div className='mb-4 md:mb-0'>
-            <h2 className='font-bold text-3xl'>{`Hi, ${user?.username}`}</h2>
-            <p className='text-gray-500'>Here is what is happening with your money. Let us manage your expenses</p>
+      <div className="p-10">
+        <div className="flex flex-col md:flex-row items-start md:items-center md:justify-between">
+          <div className="mb-4 md:mb-0">
+            <h2 className="font-bold text-3xl">{`Hi, ${user?.username}`}</h2>
+            <p className="text-gray-500">Here is what is happening with your money. Let us manage your expenses</p>
           </div>
-          <div className='flex flex-col md:flex-row gap-4 md:gap-10 md:justify-end'>
-            <div className='flex flex-wrap gap-2'>
-              <div className='flex gap-2 md:ml-5'>
-                <AddIncome refreshData={() => getTotalIncome()} />
-                <AddExpenseDialog refreshData={() => getCategoryList()} />
-              </div>
-              <div className='w-full md:w-auto mt-4 md:mt-0'>
-                <DateRangePicker
-                  initialDateFrom={dateRange.from}
-                  initialDateTo={dateRange.to}
-                  showCompare={false}
-                  onUpdate={values => {
-                    const { from, to } = values.range;
-
-                    if (!from || !to) return;
-                    if (differenceInDays(to, from) > MAX_DATE_RANGE_DAYS) {
-                      toast.error(
-                        `The selected date range is too big. Max allowed date range is ${MAX_DATE_RANGE_DAYS} days.`
-                      );
-                      return;
-                    }
-
-                    setDateRange({ from, to });
-                  }}
-                />
-              </div>
+          <div className="flex flex-col md:flex-row gap-4 md:gap-10 md:justify-end">
+            <div className="flex flex-wrap gap-2 justify-end">
+              <AddIncome refreshData={() => getTotalIncome()} />
+              <AddExpenseDialog refreshData={() => getCategoryList()} />
             </div>
           </div>
         </div>
       </div>
-      <div className='px-10'>
+      <div className="px-10 mb-5">
+        <div className="flex items-center justify-between">
+          <h2 className="font-bold text-2xl">Overview</h2>
+          <DateRangePicker
+            initialDateFrom={dateRange.from}
+            initialDateTo={dateRange.to}
+            showCompare={false}
+            onUpdate={values => {
+              const { from, to } = values.range;
+
+              if (!from || !to) return;
+              if (differenceInDays(to, from) > MAX_DATE_RANGE_DAYS) {
+                toast.error(
+                  `The selected date range is too big. Max allowed date range is ${MAX_DATE_RANGE_DAYS} days.`
+                );
+                return;
+              }
+
+              setDateRange({ from, to });
+            }}
+          />
+        </div>
+      </div>
+      <div className="mx-10">
         <CardInfo totalIncome={totalIncome} totalExpenses={totalExpenses} />
       </div>
-      <div className='grid grid-cols-1 md:grid-cols-3 mx-10 my-5 gap-5'>
-        <div className='md:col-span-2 p-7 border rounded-lg flex flex-col h-auto'>
-          {loading ? ( // Show skeleton when loading
-            <Skeleton className='w-full h-86' />
+      <div className="grid grid-cols-1 md:grid-cols-3 mx-10 my-5 gap-5">
+        <div className="md:col-span-2 p-7 border rounded-lg flex flex-col h-auto">
+          {loading ? (
+            <Skeleton className="w-full h-86" />
           ) : (
             <CategoryStats categoryList={categoryList} totalIncome={totalIncome} />
           )}
         </div>
-        <div className='p-7 border rounded-lg flex items-center h-auto'>
+        <div className="p-7 border rounded-lg flex items-center h-auto">
           <CategoryChart categoryList={categoryList} />
         </div>
+      </div>
+      <div className="mx-10 mt-8 mb-5">
+        <h2 className="font-bold text-2xl">History</h2>
+      </div>
+      <div className="mx-10 mb-5">
+        <HistoryPeriodSelector
+          period={period}
+          setPeriod={setPeriod}
+          timeframe={timeframe}
+          setTimeframe={setTimeframe}
+          years={years}
+        />
       </div>
     </div>
   );
