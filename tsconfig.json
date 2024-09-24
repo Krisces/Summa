@@ -12,6 +12,8 @@
     "isolatedModules": true,
     "jsx": "preserve",
     "incremental": true,
+    "downlevelIteration": true, // Add this line
+    "target": "esnext", // Ensure this is set to es2015 or higher
     "plugins": [
       {
         "name": "next"
