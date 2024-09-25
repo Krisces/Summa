@@ -1,41 +1,157 @@
-<<<<<<< HEAD
-This is a [Next.js](https://nextjs.org/) project bootstrapped with [`create-next-app`](https://github.com/vercel/next.js/tree/canary/packages/create-next-app).
 
+<a id="readme-top"></a>
+
+<!-- PROJECT LOGO -->
+<br />
+<div align="center">
+  <a href="https://github.com/Krisces/Summa">
+    <img src="public/logo.svg" alt="Logo" width="80" height="80">
+  </a>
+
+  <h3 align="center">Summa</h3>
+
+  <p align="center">
+    A Personal Finance Website to Track Your Expenses!
+    <br />
+    <a href="https://github.com/Krisces/Summa"><strong>Explore the docs »</strong></a>
+    <br />
+    <br />
+    <a href="https://summa-krisces-projects.vercel.app/">View Demo</a>
+    ·
+    <a href="https://github.com/Krisces/Summa/issues/new?labels=bug&template=bug-report---.md">Report Bug</a>
+    ·
+    <a href="https://github.com/Krisces/Summa/issues/new?labels=enhancement&template=feature-request---.md">Request Feature</a>
+  </p>
+</div>
+
+
+
+<!-- TABLE OF CONTENTS -->
+<details>
+  <summary>Table of Contents</summary>
+  <ol>
+    <li>
+      <a href="#about-the-project">About The Project</a>
+      <ul>
+        <li><a href="#built-with">Built With</a></li>
+      </ul>
+    </li>
+    <li>
+      <a href="#getting-started">Getting Started</a>
+      <ul>
+        <li><a href="#prerequisites">Prerequisites</a></li>
+        <li><a href="#installation">Installation</a></li>
+      </ul>
+    </li>
+    <li><a href="#usage">Usage</a></li>
+    <li><a href="#roadmap">Roadmap</a></li>
+    <li><a href="#contact">Contact</a></li>
+  </ol>
+</details>
+
+
+
+<!-- ABOUT THE PROJECT -->
+## About The Project
+
+[![Product Name Screen Shot](public/summa1.png)](https://summa-krisces-projects.vercel.app/)
+[![Product Name Screen Shot](public/summa2.png)](https://summa-krisces-projects.vercel.app/)
+
+Inspired by my mother’s budgeting habits in Germany, where cash transactions are more common, I developed this project to assist individuals like her in tracking their finances. Growing up, I witnessed her diligently manage her budget with receipts, and I wanted to create a digital solution to simplify this process.
+
+This application aims to empower users by providing a secure login/signup feature via Clerk and a user-friendly dashboard. Once logged in, users can add income and expenses, selecting a date range of up to one month to view their total income, total expenses, and net balance.
+
+Key features include:
+
+* Expense Categorization: Users can view expenses by category, represented visually with progress bars that fill as spending increases relative to total expenses.
+* Data Visualization: A percentage chart displays spending habits across categories (e.g., groceries 60%, relationships 10%, gym 30%). Additionally, a bar chart contrasts total income and expenses over a selected month or across a year.
+* Latest Expenses: Users can quickly access their most recent expenses.
+* Category Management: Users can create categories with specific emojis and names, set optional budget amounts, and view usage against the budget. Clicking on a category leads to a detailed view of related expenses, with options to edit or delete expenses.
+* Data Analytics: A dedicated tab will feature machine learning capabilities to predict spending habits and provide forecasts based on historical data. For instance, it will anticipate higher spending during the Christmas season, helping users save accordingly.
+
+This project aims to provide a comprehensive budgeting tool that not only tracks expenses but also leverages data analytics to enhance financial planning.
+
+<p align="right">(<a href="#readme-top">back to top</a>)</p>
+
+
+
+### Built With
+
+This section should list any major frameworks/libraries used to bootstrap your project. Leave any add-ons/plugins for the acknowledgements section. Here are a few examples.
+
+* [![Next][Next.js]][Next-url]
+* [![React][React.js]][React-url]
+* Drizzle-ORM
+* Tailwind CSS
+* Clerk
+
+<p align="right">(<a href="#readme-top">back to top</a>)</p>
+
+
+
+<!-- GETTING STARTED -->
 ## Getting Started
 
-First, run the development server:
+This is how to set up the project locally. Follow these simple steps to get a local copy up and running.
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
-```
+### Prerequisites
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+You need to have npm installed on your machine. You can install it using the following command:
+  ```sh
+  npm install npm@latest -g
+  ```
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+### Installation
 
-This project uses [`next/font`](https://nextjs.org/docs/basic-features/font-optimization) to automatically optimize and load Inter, a custom Google Font.
+Follow these steps to install and set up your app:
 
-## Learn More
+1. Clone the repo
+   ```sh
+   git clone https://github.com/Krisces/Summa.git
+   ```
+2. Navigate into the project directory:
+   ```sh
+   cd Summa
+   ```
+3. Install NPM packages:
+   ```sh
+   npm install
+   ```
+4. Change the git remote URL to avoid accidental pushes to the base project:
+   ```sh
+   git remote set-url origin github_username/repo_name
+   git remote -v # confirm the changes
+   ```
+5. Run the development server:
+  ```bash
+  npm run dev
+  ```
+6. Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
 
-To learn more about Next.js, take a look at the following resources:
+<p align="right">(<a href="#readme-top">back to top</a>)</p>
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js/) - your feedback and contributions are welcome!
+<!-- ROADMAP -->
+## Roadmap
 
-## Deploy on Vercel
+- [x] Improve the dashboard with visualizations for better financial insights
+- [x] Enhance the categories page with additional features (e.g., setting recurring budgets)
+- [ ] Add more detailed expense tracking options
+- [ ] Expand data analytics features with machine learning for spending predictions
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/deployment) for more details.
-=======
-# Summa
-A full-stack app using React and Next.js for tracking expenses, managing budgets (weekly, biweekly, monthly), and predicting upcoming expenses with machine learning. Features include user authentication, multiple accounts, subscription analysis, and data visualization.
->>>>>>> b6ca1ea8df9b7d1651e953b598fa674ce4481263
+See the [open issues](https://github.com/othneildrew/Best-README-Template/issues) for a full list of proposed features (and known issues).
+
+<p align="right">(<a href="#readme-top">back to top</a>)</p>
+
+
+<!-- CONTACT -->
+## Contact
+
+Kristin Boeckmann - kristinboeckmann3@gmail.com
+Project Link: [https://github.com/Krisces/Summa](https://github.com/Krisces/Summa)
+
+<p align="right">(<a href="#readme-top">back to top</a>)</p>
+
+
+
