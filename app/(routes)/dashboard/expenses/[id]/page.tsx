@@ -34,7 +34,6 @@ function ExpensesScreen({ params }: any) {
     const route = useRouter();
 
     useEffect(() => {
-
         user && getCategoryInfo();
     }, [user]);
 

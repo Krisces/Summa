@@ -8,7 +8,7 @@ import ExpenseListTable from './_components/ExpenseListTable';
 import moment from 'moment';
 import { startOfMonth } from 'date-fns';
 
-function page() {
+function Page() {
 
     const { user } = useUser();
     const [categoryList, setCategoryList] = useState<any[]>([]);
@@ -91,4 +91,4 @@ function page() {
   )
 }
 
-export default page
+export default Page

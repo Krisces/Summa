@@ -24,7 +24,7 @@ function EditCategory({ categoryInfo, refreshData }: any) {
 
     const [emojiIcon, setEmojiIcon] = useState('');
     const [openEmojiPicker, setOpenEmojiPicker] = useState(false);
-
+    const [loading, setLoading] = useState<boolean>(false);
     const [name, setName] = useState<string>('');
     const [budgetAmount, setBudgetAmount] = useState<string>('');
 
@@ -39,16 +39,24 @@ function EditCategory({ categoryInfo, refreshData }: any) {
     }, [categoryInfo]);
 
     const onUpdateCategory = async () => {
-        const result = await db.update(Categories).set({
-            name: name,
-            budgetAmount: budgetAmount === '' ? null : budgetAmount, // Set to null if empty
-            icon: emojiIcon
-        }).where(eq(Categories.id, categoryInfo.id))
+        setLoading(true); // Start loading
+        try {
+            const result = await db.update(Categories).set({
+                name,
+                budgetAmount: budgetAmount === '' ? null : budgetAmount, // Set to null if empty
+                icon: emojiIcon
+            }).where(eq(Categories.id, categoryInfo.id))
             .returning();
 
-        if (result) {
-            refreshData();
-            toast('Category Updated!');
+            if (result) {
+                refreshData();
+                toast('Category Updated!');
+            }
+        } catch (error) {
+            console.error('Error updating category:', error);
+            toast.error('Failed to update category. Please try again.');
+        } finally {
+            setLoading(false); // End loading
         }
     }
 

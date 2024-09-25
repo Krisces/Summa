@@ -36,12 +36,6 @@ import moment from 'moment';
 import { cn } from "@/lib/utils"
 import { toast } from "sonner"
 
-interface AddExpenseProps {
-    categoryId: string; // Passed as a string from parent
-    user: any; // Adjust type as necessary
-    refreshData: any;
-}
-
 function AddExpenseDialog({ refreshData }: any) {
 
     const [name, setName] = useState<string>('');
@@ -71,9 +65,7 @@ function AddExpenseDialog({ refreshData }: any) {
 
         fetchCategories();
     }, []);
-    /**
-     * User to Create New Income
-     */1
+
     const addNewExpense = async () => {
         if (user) {
             const categoryIdInt = parseInt(selectedCategory, 10);

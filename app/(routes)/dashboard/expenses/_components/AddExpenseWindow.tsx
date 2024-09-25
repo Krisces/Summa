@@ -68,6 +68,7 @@ function AddExpense({ categoryId, user, refreshData }: AddExpenseProps) {
         amount: amount,
         categoryId: categoryIdInt,
         createdAt: formattedDate, // Use the formatted date
+        createdBy: user?.primaryEmailAddress?.emailAddress as string,
       }).returning({ insertedId: Expenses.id });
 
     console.log(result);
