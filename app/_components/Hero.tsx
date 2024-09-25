@@ -7,12 +7,10 @@ function Hero() {
   <div className="mx-auto max-w-screen-xl px-4 py-32 lg:flex">
     <div className="mx-auto max-w-3xl text-center">
       <h1
-        className="bg-gradient-to-r from-green-300 via-blue-500 to-violet-600 bg-clip-text text-3xl font-extrabold text-transparent sm:text-5xl"
-      >
+        className="bg-gradient-to-r from-green-300 via-blue-500 to-violet-600 bg-clip-text text-3xl font-extrabold text-transparent sm:text-5xl">
         Your Finances, Tailored to You
-
-        <span className="sm:block"> Analyze, Plan, Prosper </span>
       </h1>
+      <h1 className="bg-gradient-to-r from-green-300 via-blue-500 to-violet-600 bg-clip-text text-3xl font-extrabold text-transparent sm:text-5xl sm:block"> Analyze, Plan, Prosper </h1>
 
       <p className="mx-auto mt-4 max-w-xl sm:text-xl/relaxed">
       Get Started on Your Financial Journey
