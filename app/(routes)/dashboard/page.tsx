@@ -18,6 +18,7 @@ import Overview from './_components/Overview';
 import AddExpenseDialog from './_components/AddExpenseDialog';
 import AddIncome from './_components/AddIncome';
 import ExpenseListTable from './expenses/_components/ExpenseListTable';
+import Head from 'next/head';
 
 function Page() {
   const { user } = useUser();
@@ -345,6 +346,7 @@ function Page() {
 
   return (
     <div>
+        <title>Summa Dashboard</title>
       <div className="p-10">
         <div className="flex flex-col md:flex-row items-start md:items-center md:justify-between">
           <div className="mb-4 md:mb-0">

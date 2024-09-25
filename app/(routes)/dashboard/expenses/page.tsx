@@ -83,6 +83,7 @@ function Page() {
 
   return (
     <div className='p-10'>
+      <title>Summa Expenses</title>
         <h2 className='text-3xl font-bold flex justify-between items-center'>Latest Expenses</h2>
       <div className="mt-8 mb-16">
         <ExpenseListTable expensesList={expensesList} refreshData={() => getCategoryList} />
