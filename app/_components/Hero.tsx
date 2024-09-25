@@ -35,12 +35,12 @@ function Hero() {
       </div>
     </div>
   </div>
-  <Image src={'/Summa1.png'} alt='dashboard'
+  <Image src={'/summa1.png'} alt='summa1'
   width={1000}
   height={700}
   className='mb-10 rounded-xl border-2'
   />
-  <Image src={'/Summa2.png'} alt='dashboard'
+  <Image src={'/summa2.png'} alt='summa2'
   width={1000}
   height={700}
   className='mb-10 rounded-xl border-2'
