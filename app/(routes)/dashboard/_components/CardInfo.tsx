@@ -3,7 +3,8 @@ import React from 'react';
 
 function CardInfo({ totalIncome, totalExpenses }: any) { // Receive totalIncome and totalExpenses as props
   return (
-    <div className='grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5'>
+    <div className="mx-10">
+      <div className='grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5'>
       <div className='p-7 border rounded-lg flex items-center justify-between'>
         <div>
           <h2 className='text-sm'>Total Income</h2>
@@ -25,6 +26,7 @@ function CardInfo({ totalIncome, totalExpenses }: any) { // Receive totalIncome 
         </div>
         <HandCoins className='bg-primary p-3 h-12 w-12 rounded-full text-white'/>
       </div>
+    </div>
     </div>
   );
 }

@@ -19,8 +19,6 @@ function CategoryStats({ categoryList, totalIncome }: CategoryStatsProps) {
   return (
     <div className='w-full'>
       {categoryList.map((category) => {
-        // Debugging: Log category data to ensure correct values
-        console.log('Category:', category);
         
         const budgetAmount = category.budgetAmount !== null ? parseFloat(category.budgetAmount) : 0;
         const totalSpend = category.totalExpenses ?? 0;

@@ -2,6 +2,7 @@
 
 import * as React from "react"
 import { useState } from 'react'
+import { useUser } from '@clerk/nextjs';
 import {
     Dialog,
     DialogClose,
@@ -41,7 +42,7 @@ interface AddExpenseProps {
     refreshData: any;
 }
 
-function AddExpenseDialog({refreshData}:any) {
+function AddExpenseDialog({ refreshData }: any) {
 
     const [name, setName] = useState<string>('');
     const [amount, setAmount] = useState<string>('');
@@ -49,6 +50,7 @@ function AddExpenseDialog({refreshData}:any) {
     const [transactionDate, setTransactionDate] = useState<Date | undefined>(undefined);
     const [selectedCategory, setSelectedCategory] = useState<string>('');
     const [open, setOpen] = useState(false);
+    const { user } = useUser();
 
 
     React.useEffect(() => {
@@ -71,25 +73,27 @@ function AddExpenseDialog({refreshData}:any) {
     }, []);
     /**
      * User to Create New Income
-     */
+     */1
     const addNewExpense = async () => {
-        const categoryIdInt = parseInt(selectedCategory, 10);
+        if (user) {
+            const categoryIdInt = parseInt(selectedCategory, 10);
 
-        // Format the date as MM-DD-YYYY
-        const formattedDate = transactionDate ? moment(transactionDate).format('MM-DD-YYYY') : '';
+            // Format the date as MM-DD-YYYY
+            const formattedDate = transactionDate ? moment(transactionDate).format('MM-DD-YYYY') : '';
 
-        const result = await db.insert(Expenses)
-            .values({
+            const result = await db.insert(Expenses).values({
                 name: name,
                 amount: amount,
                 categoryId: categoryIdInt,
                 createdAt: formattedDate, // Use the formatted date
+                createdBy: user?.primaryEmailAddress?.emailAddress as string,
             }).returning({ insertedId: Expenses.id });
 
-        console.log(result);
-        if (result) {
-            refreshData();
-            toast('New Expense Added!');
+            console.log(result);
+            if (result) {
+                refreshData();
+                toast('New Expense Added!');
+            }
         }
     };
 
@@ -108,7 +112,7 @@ function AddExpenseDialog({refreshData}:any) {
                             <div className='mt-5'>
                                 <div className='mt-3'>
                                     <h2 className='text-black font-medium my-1'>
-                                        Income Name
+                                        Expense Name
                                     </h2>
                                     <Input
                                         type="string"

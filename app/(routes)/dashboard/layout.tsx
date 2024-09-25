@@ -29,7 +29,6 @@ function DashboardLayout({ children }: DashboardLayoutProps) {
     if (result.length == 0) {
       router.replace('/dashboard/categories')
     }
-    console.log(result);
   }
   
   return (

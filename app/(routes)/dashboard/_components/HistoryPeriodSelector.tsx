@@ -6,8 +6,9 @@ interface HistoryPeriodSelectorProps {
   setPeriod: React.Dispatch<React.SetStateAction<{ year: number; month: number }>>;
   timeframe: 'year' | 'month';
   setTimeframe: React.Dispatch<React.SetStateAction<'year' | 'month'>>;
-  years: number[]; // Ensure this is number[]
-  months: number[]; // Ensure this is number[]
+  years: number[];
+  months: number[];
+  refreshData: () => void;
 }
 
 const HistoryPeriodSelector: React.FC<HistoryPeriodSelectorProps> = ({
@@ -16,28 +17,31 @@ const HistoryPeriodSelector: React.FC<HistoryPeriodSelectorProps> = ({
   timeframe,
   setTimeframe,
   years,
-  months, // Receive months as a prop
+  months,
+  refreshData,
 }) => {
-  const [filteredMonths, setFilteredMonths] = useState<number[]>([]);
+  const [filteredMonths, setFilteredMonths] = useState<number[]>(months); // Set all months by default
 
   useEffect(() => {
-    // Set the filtered months based on the selected year
     if (timeframe === 'month') {
-      const monthCount = new Date(period.year, 0, 0).getMonth(); // Get the number of months in the selected year
-      setFilteredMonths(months.slice(0, monthCount + 1)); // Slice months based on the count
+      setFilteredMonths(months); // Set all available months
     }
-  }, [period.year, timeframe, months]);
+  }, [timeframe, months]);
 
   const handleYearChange = (event: React.ChangeEvent<HTMLSelectElement>) => {
-    setPeriod(prev => ({ ...prev, year: parseInt(event.target.value), month: 1 })); // Reset month when year changes
+    const newYear = parseInt(event.target.value);
+    setPeriod(prev => ({ ...prev, year: newYear, month: 1 })); // Reset month when year changes
+    refreshData(); // Refresh data when year changes
   };
 
   const handleMonthChange = (event: React.ChangeEvent<HTMLSelectElement>) => {
-    setPeriod(prev => ({ ...prev, month: parseInt(event.target.value) }));
+    const newMonth = parseInt(event.target.value);
+    setPeriod(prev => ({ ...prev, month: newMonth }));
+    refreshData(); // Refresh data when month changes
   };
 
   return (
-    <div className='border p-4 rounded-lg border-gray-300'>
+    <div className='p-4 rounded-lg border-gray-300'>
       <div className='flex flex-wrap items-center gap-4 mb-4'>
         <Tabs value={timeframe} onValueChange={(value) => setTimeframe(value as 'year' | 'month')}>
           <TabsList>

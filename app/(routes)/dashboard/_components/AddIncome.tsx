@@ -26,7 +26,6 @@ function AddIncome({refreshData}:any) {
     const [name, setName] = useState<string>('');
     const [amount, setAmount] = useState<string>('');
     const [transactionDate, setTransactionDate] = useState<Date | undefined>(undefined);
-
     const { user } = useUser();
 
     /**
