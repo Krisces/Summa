@@ -59,6 +59,17 @@ function Page() {
     }
   }, [user, dateRange]); // Use global dateRange as a dependency
 
+  // Add a separate useEffect to fetch data on component mount
+  useEffect(() => {
+    if (user) {
+      setLoading(true);
+      Promise.all([getCategoryList(), getTotalIncome(), getAvailablePeriods(), getBarChartData()])
+        .finally(() => {
+          setLoading(false);
+        });
+    }
+  }, []); // Empty dependency array ensures this runs only once on mount
+
   const getCategoryList = async () => {
     try {
       const formattedFromDate = moment(dateRange.from).format('MM-DD-YYYY'); // Format from date
@@ -318,7 +329,7 @@ function Page() {
     }
   };
 
-  
+
   useEffect(() => {
     getBarChartData(); // Call the function to fetch bar chart data whenever period or timeframe changes
   }, [period, timeframe]); // Dependency array includes period and timeframe

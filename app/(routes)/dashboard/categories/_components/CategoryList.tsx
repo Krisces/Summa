@@ -14,9 +14,19 @@ function CategoryList() {
   const { user } = useUser();
   const { dateRange } = useDateRange(); // Get the date range from the context
 
+  // Fetch categories on mount and when dateRange changes
   useEffect(() => {
-    user && getCategoryList(dateRange); // Pass dateRange to getCategoryList
+    if (user) {
+      getCategoryList(dateRange);
+    }
   }, [user, dateRange]); // Add dateRange as a dependency
+
+  // Fetch categories on component mount
+  useEffect(() => {
+    if (user) {
+      getCategoryList(dateRange);
+    }
+  }, []); /// Empty dependency array ensures this runs only once on mount
 
   /**
    * Used to get category list
