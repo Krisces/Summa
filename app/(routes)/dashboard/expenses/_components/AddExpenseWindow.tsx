@@ -21,6 +21,7 @@ import {
 } from "@/components/ui/popover"
 import { DatePicker } from "@/components/ui/DatePicker"
 import moment from 'moment';
+import { eq } from 'drizzle-orm';
 
 interface AddExpenseProps {
   categoryId: string; // Passed as a string from parent
@@ -41,7 +42,7 @@ function AddExpense({ categoryId, user, refreshData }: AddExpenseProps) {
     // Fetch categories from the database
     const fetchCategories = async () => {
       try {
-        const result = await db.select().from(Categories);
+        const result = await db.select().from(Categories).where(eq(Categories.createdBy, user?.primaryEmailAddress?.emailAddress));
         const categoryOptions = result.map((category) => ({
           value: category.id.toString(),
           label: category.name,
