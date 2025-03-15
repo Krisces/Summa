@@ -1,5 +1,4 @@
 "use client";
-// Overview.tsx
 import React from 'react';
 import { DateRangePicker } from '@/components/ui/date-range-picker';
 import { toast } from 'sonner';
@@ -7,9 +6,14 @@ import { differenceInDays } from 'date-fns';
 
 const MAX_DATE_RANGE_DAYS = 30; // Adjust as necessary
 
+interface DateRange {
+  from: Date;
+  to: Date;
+}
+
 interface OverviewProps {
-  dateRange: { from: Date; to: Date };
-  setDateRange: React.Dispatch<React.SetStateAction<{ from: Date; to: Date }>>;
+  dateRange: DateRange;
+  setDateRange: (range: DateRange) => void;
 }
 
 const Overview: React.FC<OverviewProps> = ({ dateRange, setDateRange }) => {
@@ -19,18 +23,17 @@ const Overview: React.FC<OverviewProps> = ({ dateRange, setDateRange }) => {
         <h2 className="font-bold text-2xl">Overview</h2>
         <div className="mt-4 md:mt-0">
           <DateRangePicker
-            initialDateFrom={dateRange.from} // Initial date range from state
-            initialDateTo={dateRange.to} // Initial date range to state
+            initialDateFrom={dateRange.from}
+            initialDateTo={dateRange.to}
             showCompare={false}
             onUpdate={values => {
-              const { from, to } = values.range; // Destructure from and to dates
-              if (!from || !to) return; // Validate dates
+              const { from, to } = values.range;
+              if (!from || !to) return;
               if (differenceInDays(to, from) > MAX_DATE_RANGE_DAYS) {
-                // Show error if selected range exceeds limit
                 toast.error(`The selected date range is too big. Max allowed date range is ${MAX_DATE_RANGE_DAYS} days.`);
                 return;
               }
-              setDateRange({ from, to }); // Update date range state
+              setDateRange({ from, to });
             }}
           />
         </div>
