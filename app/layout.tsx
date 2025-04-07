@@ -3,6 +3,7 @@ import { Outfit } from "next/font/google";
 import "./globals.css";
 import { ClerkProvider } from "@clerk/nextjs";
 import { Toaster } from "@/components/ui/sonner";
+import { DateRangeProvider } from '@/contexts/DateRangeContext'; 
 
 const inter = Outfit({ subsets: ["latin"] });
 
@@ -20,8 +21,10 @@ export default function RootLayout({
     <ClerkProvider>
     <html lang="en">
       <body className={inter.className}>
-        {children}
-        <Toaster />
+        <DateRangeProvider> {/* Wrap the app with DateRangeProvider */}
+          {children}
+          <Toaster />
+        </DateRangeProvider>
       </body>
     </html>
     </ClerkProvider>

@@ -1,7 +1,7 @@
 "use client";
 import { useUser } from '@clerk/nextjs';
 import React, { useEffect, useState } from 'react';
-import { differenceInDays, startOfMonth } from 'date-fns';
+import {startOfMonth } from 'date-fns';
 import CardInfo from './_components/CardInfo';
 import { Skeleton } from "@/components/ui/skeleton";
 import { db } from '@/utils/dbConfig';
@@ -18,7 +18,7 @@ import Overview from './_components/Overview';
 import AddExpenseDialog from './_components/AddExpenseDialog';
 import AddIncome from './_components/AddIncome';
 import ExpenseListTable from './expenses/_components/ExpenseListTable';
-import Head from 'next/head';
+import { useDateRange } from '@/contexts/DateRangeContext';
 
 function Page() {
   const { user } = useUser();
@@ -26,13 +26,10 @@ function Page() {
   const [expensesList, setExpensesList] = useState<any[]>([]);
   const [totalIncome, setTotalIncome] = useState<number>(0);
   const [totalExpenses, setTotalExpenses] = useState<number>(0);
-  const [dateRange, setDateRange] = useState<{ from: Date; to: Date }>({
-    from: startOfMonth(new Date()),
-    to: new Date(),
-  });
+  const { dateRange, setGlobalDateRange } = useDateRange(); // Use global dateRange state
   const [loading, setLoading] = useState<boolean>(true);
-  const [months, setMonths] = useState<number[]>([]); // For month numbers
-  const [years, setYears] = useState<number[]>([]); // For year numbers
+  const [months, setMonths] = useState<number[]>([]);
+  const [years, setYears] = useState<number[]>([]);
   const [period, setPeriod] = useState({ year: new Date().getFullYear(), month: new Date().getMonth() + 1 });
   const [timeframe, setTimeframe] = useState<'year' | 'month'>('year');
   const [barChartData, setBarChartData] = useState<any[]>([]);
@@ -41,6 +38,15 @@ function Page() {
     'July', 'August', 'September', 'October', 'November', 'December'
   ];
 
+  useEffect(() => {
+    if (dateRange.from) {
+      const startDate = new Date(dateRange.from);
+      setPeriod({
+        year: startDate.getFullYear(),
+        month: startDate.getMonth() + 1, // Months are 0-indexed in JavaScript
+      });
+    }
+  }, [dateRange]);
 
   // Existing useEffect to fetch categories and income
   useEffect(() => {
@@ -51,9 +57,18 @@ function Page() {
           setLoading(false); // Set loading state to false after fetching is complete
         });
     }
-  }, [user, dateRange]);
+  }, [user, dateRange]); // Use global dateRange as a dependency
 
-
+  // Add a separate useEffect to fetch data on component mount
+  useEffect(() => {
+    if (user) {
+      setLoading(true);
+      Promise.all([getCategoryList(), getTotalIncome(), getAvailablePeriods(), getBarChartData()])
+        .finally(() => {
+          setLoading(false);
+        });
+    }
+  }, []); // Empty dependency array ensures this runs only once on mount
 
   const getCategoryList = async () => {
     try {
@@ -194,80 +209,93 @@ function Page() {
     totalExpenses: number;
   }
 
+  interface IncomeData {
+    day: number;
+    totalIncome: number;
+  }
+  
+  interface ExpensesData {
+    day: number;
+    totalExpenses: number;
+  }
+
+  interface MonthlyData {
+    name: string;
+    Income: number;
+    Expenses: number;
+  }
+
   const getBarChartData = async () => {
     if (!user) return;
-
+  
     try {
       let result;
-
+  
       if (timeframe === 'month') {
-        // Create an array of all days in the month
-        const daysInMonth = Array.from({ length: new Date(period.year, period.month, 0).getDate() }, (_, index) => index + 1);
-
-        // Fetch daily data for the selected month
-        result = await db
-          .select({
-            day: sql`all_days.day`,
-            totalIncome: sql`COALESCE(income_data.total_income, 0)::NUMERIC AS totalIncome`,
-            totalExpenses: sql`COALESCE(expenses_data.total_expenses, 0)::NUMERIC AS totalExpenses`
-          })
-          .from(
-            sql`(SELECT generate_series(1, ${daysInMonth.length}) AS day) AS all_days`
-          )
-          .leftJoin(
-            sql`(SELECT 
-                        EXTRACT(DAY FROM TO_DATE(${Income.transactionDate}, 'MM-DD-YYYY')) AS day, 
-                        SUM(DISTINCT ${Income.amount}) AS total_income 
-                    FROM ${Income} 
-                    WHERE ${eq(Income.createdBy, user?.primaryEmailAddress?.emailAddress as string)}
-                    AND EXTRACT(YEAR FROM TO_DATE(${Income.transactionDate}, 'MM-DD-YYYY')) = ${period.year} 
-                    AND EXTRACT(MONTH FROM TO_DATE(${Income.transactionDate}, 'MM-DD-YYYY')) = ${period.month}
-                    GROUP BY day) AS income_data`,
-            sql`all_days.day = income_data.day`
-          )
-          .leftJoin(
-            sql`(SELECT 
-                        EXTRACT(DAY FROM TO_DATE(${Expenses.createdAt}, 'MM-DD-YYYY')) AS day, 
-                        SUM(${Expenses.amount}) AS total_expenses 
-                    FROM ${Expenses} 
-                    LEFT JOIN ${Categories} ON ${Expenses.categoryId} = ${Categories.id} 
-                    WHERE ${eq(Expenses.createdBy, user?.primaryEmailAddress?.emailAddress as string)} 
-                    AND EXTRACT(YEAR FROM TO_DATE(${Expenses.createdAt}, 'MM-DD-YYYY')) = ${period.year} 
-                    AND EXTRACT(MONTH FROM TO_DATE(${Expenses.createdAt}, 'MM-DD-YYYY')) = ${period.month} 
-                    GROUP BY day) AS expenses_data`,
-            sql`all_days.day = expenses_data.day`
-          )
-          .orderBy(sql`all_days.day`)
-          .execute();
-
-        const dailyData = daysInMonth.map(day => ({
+        const daysInMonth = new Date(period.year, period.month, 0).getDate();
+        const dailyData = Array.from({ length: daysInMonth }, (_, index) => ({
           month: period.month,
           year: period.year,
-          day,
+          day: index + 1,
           totalIncome: 0,
           totalExpenses: 0,
         }));
-
-        result.forEach(item => {
-          const typedItem = item as BarChartData;
-          dailyData[typedItem.day - 1] = {
-            month: period.month,
-            year: period.year,
-            day: typedItem.day,
-            totalIncome: Number(typedItem.totalIncome),
-            totalExpenses: Number(typedItem.totalExpenses),
-          };
+  
+        // Fetch income data for the selected month
+        const incomeData = await db
+          .select({
+            day: sql<number>`EXTRACT(DAY FROM TO_DATE(${Income.transactionDate}, 'MM-DD-YYYY')) AS day`,
+            totalIncome: sql<number>`SUM(${Income.amount}) AS totalIncome`,
+          })
+          .from(Income)
+          .where(
+            sql`${Income.createdBy} = ${user?.primaryEmailAddress?.emailAddress as string}
+              AND EXTRACT(YEAR FROM TO_DATE(${Income.transactionDate}, 'MM-DD-YYYY')) = ${period.year}
+              AND EXTRACT(MONTH FROM TO_DATE(${Income.transactionDate}, 'MM-DD-YYYY')) = ${period.month}`
+          )
+          .groupBy(sql`day`)
+          .execute() as IncomeData[];
+  
+        // Fetch expenses data for the selected month
+        const expensesData = await db
+          .select({
+            day: sql<number>`EXTRACT(DAY FROM TO_DATE(${Expenses.createdAt}, 'MM-DD-YYYY')) AS day`,
+            totalExpenses: sql<number>`SUM(${Expenses.amount}) AS totalExpenses`,
+          })
+          .from(Expenses)
+          .leftJoin(Categories, eq(Expenses.categoryId, Categories.id))
+          .where(
+            sql`${Expenses.createdBy} = ${user?.primaryEmailAddress?.emailAddress as string}
+              AND EXTRACT(YEAR FROM TO_DATE(${Expenses.createdAt}, 'MM-DD-YYYY')) = ${period.year}
+              AND EXTRACT(MONTH FROM TO_DATE(${Expenses.createdAt}, 'MM-DD-YYYY')) = ${period.month}`
+          )
+          .groupBy(sql`day`)
+          .execute() as ExpensesData[];
+  
+        // Merge income and expenses data into dailyData
+        incomeData.forEach((item: IncomeData) => {
+          const dayIndex = item.day - 1;
+          if (dayIndex >= 0 && dayIndex < dailyData.length) {
+            dailyData[dayIndex].totalIncome = Number(item.totalIncome);
+          }
         });
-
+  
+        expensesData.forEach((item: ExpensesData) => {
+          const dayIndex = item.day - 1;
+          if (dayIndex >= 0 && dayIndex < dailyData.length) {
+            dailyData[dayIndex].totalExpenses = Number(item.totalExpenses);
+          }
+        });
+  
         setBarChartData(dailyData);
-        console.log("Daily Data for Month:", dailyData);
       } else {
+        // Fetch yearly data
         result = await db
           .select({
-            month: sql`EXTRACT(MONTH FROM TO_DATE(${Income.transactionDate}, 'MM-DD-YYYY')) AS month`,
-            year: sql`EXTRACT(YEAR FROM TO_DATE(${Income.transactionDate}, 'MM-DD-YYYY')) AS year`,
-            totalIncome: sql`COALESCE(SUM(DISTINCT ${Income.amount}), 0)::NUMERIC AS totalIncome`,
-            totalExpenses: sql`COALESCE(SUM(${Expenses.amount}), 0)::NUMERIC AS totalExpenses`
+            month: sql<number>`EXTRACT(MONTH FROM TO_DATE(${Income.transactionDate}, 'MM-DD-YYYY')) AS month`,
+            year: sql<number>`EXTRACT(YEAR FROM TO_DATE(${Income.transactionDate}, 'MM-DD-YYYY')) AS year`,
+            totalIncome: sql<number>`COALESCE(SUM(DISTINCT ${Income.amount}), 0)::NUMERIC AS totalIncome`,
+            totalExpenses: sql<number>`COALESCE(SUM(${Expenses.amount}), 0)::NUMERIC AS totalExpenses`
           })
           .from(Income)
           .leftJoin(
@@ -279,32 +307,28 @@ function Page() {
           .groupBy(sql`year`, sql`month`)
           .orderBy(sql`year`, sql`month`)
           .execute() as BarChartData[];
-
-        if (result.length === 0) {
-          console.warn("No data found for the selected year.");
-        }
-
-        const allMonthsData = monthNames.map((month) => ({
+  
+        const allMonthsData = monthNames.map((month, index) => ({
           name: month,
           Income: 0,
           Expenses: 0,
         }));
-
-        result.forEach(item => {
-          allMonthsData[item.month - 1] = {
-            name: monthNames[item.month - 1],
-            Income: Number(item.totalIncome),
-            Expenses: Number(item.totalExpenses),
-          };
+  
+        result.forEach((item: BarChartData) => {
+          const monthIndex = item.month - 1;
+          if (monthIndex >= 0 && monthIndex < allMonthsData.length) {
+            allMonthsData[monthIndex].Income = Number(item.totalIncome);
+            allMonthsData[monthIndex].Expenses = Number(item.totalExpenses);
+          }
         });
-
+  
         setBarChartData(allMonthsData);
-        console.log("Monthly Data for Year:", allMonthsData);
       }
     } catch (error) {
       console.error("Error fetching bar chart data:", error);
     }
   };
+
 
   useEffect(() => {
     getBarChartData(); // Call the function to fetch bar chart data whenever period or timeframe changes
@@ -367,7 +391,7 @@ function Page() {
           </div>
         </div>
       </div>
-      <Overview dateRange={dateRange} setDateRange={setDateRange} />
+      <Overview dateRange={dateRange} setDateRange={setGlobalDateRange} />
       <CardInfo totalIncome={totalIncome} totalExpenses={totalExpenses} />
       {/* Category Stats and Chart */}
       <div className="grid grid-cols-1 md:grid-cols-3 mx-10 my-5 gap-5">
@@ -420,17 +444,12 @@ function Page() {
                     dataKey="day"
                     tickFormatter={(day) => {
                       const date = new Date(period.year, period.month - 1, day);
-                      // Display only specific days or the first and last of the month
-                      if (day === 1 || day === new Date(period.year, period.month, 0).getDate() || day % 5 === 0) {
-                        return date.toLocaleDateString('en-US', { month: 'long', day: 'numeric' });
-                      }
-                      return '';
+                      return date.toLocaleDateString('en-US', { day: 'numeric' });
                     }}
                   />
                   <YAxis />
                   <Tooltip
                     formatter={(value, name) => {
-                      // Customize tooltip content
                       return [`${value}`, name];
                     }}
                   />
@@ -443,7 +462,6 @@ function Page() {
                   <YAxis />
                   <Tooltip
                     formatter={(value, name) => {
-                      // Customize tooltip content
                       return [`${value}`, name];
                     }}
                   />
