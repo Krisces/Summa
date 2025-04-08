@@ -1,7 +1,7 @@
 "use client";
 import { useUser } from '@clerk/nextjs';
 import React, { useEffect, useState } from 'react';
-import { differenceInDays, startOfMonth } from 'date-fns';
+import {startOfMonth } from 'date-fns';
 import CardInfo from './_components/CardInfo';
 import { Skeleton } from "@/components/ui/skeleton";
 import { db } from '@/utils/dbConfig';
@@ -18,7 +18,7 @@ import Overview from './_components/Overview';
 import AddExpenseDialog from './_components/AddExpenseDialog';
 import AddIncome from './_components/AddIncome';
 import ExpenseListTable from './expenses/_components/ExpenseListTable';
-import Head from 'next/head';
+import { useDateRange } from '@/context/DateRangeContext';
 
 function Page() {
   const { user } = useUser();
@@ -26,34 +26,52 @@ function Page() {
   const [expensesList, setExpensesList] = useState<any[]>([]);
   const [totalIncome, setTotalIncome] = useState<number>(0);
   const [totalExpenses, setTotalExpenses] = useState<number>(0);
-  const [dateRange, setDateRange] = useState<{ from: Date; to: Date }>({
-    from: startOfMonth(new Date()),
-    to: new Date(),
-  });
+  const { dateRange, setGlobalDateRange } = useDateRange();
   const [loading, setLoading] = useState<boolean>(true);
-  const [months, setMonths] = useState<number[]>([]); // For month numbers
-  const [years, setYears] = useState<number[]>([]); // For year numbers
-  const [period, setPeriod] = useState({ year: new Date().getFullYear(), month: new Date().getMonth() + 1 });
+  const [months, setMonths] = useState<number[]>([]);
+  const [years, setYears] = useState<number[]>([]);
+  
+  // Main dashboard period controls (used by HistoryPeriodSelector)
+  const [period, setPeriod] = useState({ 
+    year: new Date().getFullYear(), 
+    month: new Date().getMonth() + 1 
+  });
   const [timeframe, setTimeframe] = useState<'year' | 'month'>('year');
+  
+  // Bar chart period controls - now properly synchronized
+  const [barChartPeriod, setBarChartPeriod] = useState({
+    year: new Date().getFullYear(),
+    month: new Date().getMonth() + 1
+  });
+  const [barChartTimeframe, setBarChartTimeframe] = useState<'year' | 'month'>('year');
+  
   const [barChartData, setBarChartData] = useState<any[]>([]);
   const monthNames = [
     'January', 'February', 'March', 'April', 'May', 'June',
     'July', 'August', 'September', 'October', 'November', 'December'
   ];
 
+  // Synchronize bar chart period with main period
+  useEffect(() => {
+    setBarChartPeriod(period);
+    setBarChartTimeframe(timeframe);
+  }, [period, timeframe]);
 
-  // Existing useEffect to fetch categories and income
   useEffect(() => {
     if (user) {
-      setLoading(true); // Set loading state to true while fetching data
-      Promise.all([getCategoryList(), getTotalIncome(), getAvailablePeriods(), getBarChartData()]) // Fetch both category list and total income concurrently
-        .finally(() => {
-          setLoading(false); // Set loading state to false after fetching is complete
-        });
+      setLoading(true);
+      Promise.all([getCategoryList(), getTotalIncome(), getAvailablePeriods(), getBarChartData()])
+        .finally(() => setLoading(false));
     }
   }, [user, dateRange]);
 
-
+  useEffect(() => {
+    if (user) {
+      setLoading(true);
+      Promise.all([getCategoryList(), getTotalIncome(), getAvailablePeriods(), getBarChartData()])
+        .finally(() => setLoading(false));
+    }
+  }, []);
 
   const getCategoryList = async () => {
     try {
@@ -128,20 +146,20 @@ function Page() {
       // Fetch income periods
       const incomePeriods = await db
         .select({
-          year: sql`SUBSTRING(${Income.transactionDate}, 7, 4)::INT`, // Extract year
-          month: sql`SUBSTRING(${Income.transactionDate}, 1, 2)::INT`, // Extract month
+          year: sql`SUBSTRING(${Income.transactionDate}, 7, 4)::INT`,
+          month: sql`SUBSTRING(${Income.transactionDate}, 1, 2)::INT`,
         })
         .from(Income)
         .where(eq(Income.createdBy, user?.primaryEmailAddress?.emailAddress as string))
         .groupBy(
-          sql`SUBSTRING(${Income.transactionDate}, 7, 4)`, // Group by year
-          sql`SUBSTRING(${Income.transactionDate}, 1, 2)` // Group by month
+          sql`SUBSTRING(${Income.transactionDate}, 7, 4)`,
+          sql`SUBSTRING(${Income.transactionDate}, 1, 2)`
         )
         .orderBy(
-          sql`SUBSTRING(${Income.transactionDate}, 7, 4)::INT DESC`, // Order by extracted year
-          sql`SUBSTRING(${Income.transactionDate}, 1, 2)::INT DESC` // Order by extracted month
+          sql`SUBSTRING(${Income.transactionDate}, 7, 4)::INT DESC`,
+          sql`SUBSTRING(${Income.transactionDate}, 1, 2)::INT DESC`
         )
-        .execute() as Period[]; // Assert type
+        .execute() as Period[];
 
       // Fetch expense periods
       const expensePeriods = await db
@@ -172,8 +190,20 @@ function Page() {
       // Get available months for the most recent year
       const currentYear = Math.max(...uniqueYears);
       const availableMonths = [...new Set(allPeriods.filter(p => p.year === currentYear).map(p => p.month))].sort((a, b) => a - b);
-      setMonths(availableMonths); // Ensure this is a number[] and matches your state definition
 
+      setMonths(availableMonths); // Ensure this is a number[] and matches your state definition
+        // Set initial period to most recent available data
+      if (allPeriods.length > 0) {
+        const mostRecent = allPeriods[0];
+        setPeriod({
+          year: mostRecent.year,
+          month: mostRecent.month
+        });
+        setBarChartPeriod({
+          year: mostRecent.year,
+          month: mostRecent.month
+        });
+      }
     } catch (error) {
       console.error("Error fetching available periods:", error);
     }
@@ -186,125 +216,125 @@ function Page() {
     }
   }, [user]);
 
-  interface BarChartData {
-    day: number;
-    month: number;
-    year: number;
-    totalIncome: number;
-    totalExpenses: number;
-  }
+  useEffect(() => {
+    getBarChartData();
+  }, [barChartPeriod, barChartTimeframe]); // Now depends on bar chart's own period state
 
   const getBarChartData = async () => {
     if (!user) return;
 
     try {
-      let result;
-
       if (timeframe === 'month') {
-        // Create an array of all days in the month
-        const daysInMonth = Array.from({ length: new Date(period.year, period.month, 0).getDate() }, (_, index) => index + 1);
+        const { year, month } = period;
+        console.log('Fetching bar chart data for:', year, month);
 
-        // Fetch daily data for the selected month
-        result = await db
-          .select({
-            day: sql`all_days.day`,
-            totalIncome: sql`COALESCE(income_data.total_income, 0)::NUMERIC AS totalIncome`,
-            totalExpenses: sql`COALESCE(expenses_data.total_expenses, 0)::NUMERIC AS totalExpenses`
-          })
-          .from(
-            sql`(SELECT generate_series(1, ${daysInMonth.length}) AS day) AS all_days`
-          )
-          .leftJoin(
-            sql`(SELECT 
-                        EXTRACT(DAY FROM TO_DATE(${Income.transactionDate}, 'MM-DD-YYYY')) AS day, 
-                        SUM(DISTINCT ${Income.amount}) AS total_income 
-                    FROM ${Income} 
-                    WHERE ${eq(Income.createdBy, user?.primaryEmailAddress?.emailAddress as string)}
-                    AND EXTRACT(YEAR FROM TO_DATE(${Income.transactionDate}, 'MM-DD-YYYY')) = ${period.year} 
-                    AND EXTRACT(MONTH FROM TO_DATE(${Income.transactionDate}, 'MM-DD-YYYY')) = ${period.month}
-                    GROUP BY day) AS income_data`,
-            sql`all_days.day = income_data.day`
-          )
-          .leftJoin(
-            sql`(SELECT 
-                        EXTRACT(DAY FROM TO_DATE(${Expenses.createdAt}, 'MM-DD-YYYY')) AS day, 
-                        SUM(${Expenses.amount}) AS total_expenses 
-                    FROM ${Expenses} 
-                    LEFT JOIN ${Categories} ON ${Expenses.categoryId} = ${Categories.id} 
-                    WHERE ${eq(Expenses.createdBy, user?.primaryEmailAddress?.emailAddress as string)} 
-                    AND EXTRACT(YEAR FROM TO_DATE(${Expenses.createdAt}, 'MM-DD-YYYY')) = ${period.year} 
-                    AND EXTRACT(MONTH FROM TO_DATE(${Expenses.createdAt}, 'MM-DD-YYYY')) = ${period.month} 
-                    GROUP BY day) AS expenses_data`,
-            sql`all_days.day = expenses_data.day`
-          )
-          .orderBy(sql`all_days.day`)
-          .execute();
-
-        const dailyData = daysInMonth.map(day => ({
-          month: period.month,
-          year: period.year,
-          day,
-          totalIncome: 0,
-          totalExpenses: 0,
+        const daysInMonth = new Date(year, month, 0).getDate();
+        const dailyData = Array.from({ length: daysInMonth }, (_, index) => ({
+          day: index + 1,
+          Income: 0,
+          Expenses: 0,
         }));
 
-        result.forEach(item => {
-          const typedItem = item as BarChartData;
-          dailyData[typedItem.day - 1] = {
-            month: period.month,
-            year: period.year,
-            day: typedItem.day,
-            totalIncome: Number(typedItem.totalIncome),
-            totalExpenses: Number(typedItem.totalExpenses),
-          };
-        });
-
-        setBarChartData(dailyData);
-        console.log("Daily Data for Month:", dailyData);
-      } else {
-        result = await db
+        // Fetch income data for the selected month
+        const incomeData = await db
           .select({
-            month: sql`EXTRACT(MONTH FROM TO_DATE(${Income.transactionDate}, 'MM-DD-YYYY')) AS month`,
-            year: sql`EXTRACT(YEAR FROM TO_DATE(${Income.transactionDate}, 'MM-DD-YYYY')) AS year`,
-            totalIncome: sql`COALESCE(SUM(DISTINCT ${Income.amount}), 0)::NUMERIC AS totalIncome`,
-            totalExpenses: sql`COALESCE(SUM(${Expenses.amount}), 0)::NUMERIC AS totalExpenses`
+            day: sql<number>`EXTRACT(DAY FROM TO_DATE(${Income.transactionDate}, 'MM-DD-YYYY')) AS day`,
+            total: sql<number>`COALESCE(SUM(${Income.amount}), 0) AS total`,
           })
           .from(Income)
-          .leftJoin(
-            Expenses,
-            sql`EXTRACT(YEAR FROM TO_DATE(${Expenses.createdAt}, 'MM-DD-YYYY')) = EXTRACT(YEAR FROM TO_DATE(${Income.transactionDate}, 'MM-DD-YYYY')) AND EXTRACT(MONTH FROM TO_DATE(${Expenses.createdAt}, 'MM-DD-YYYY')) = EXTRACT(MONTH FROM TO_DATE(${Income.transactionDate}, 'MM-DD-YYYY'))`
+          .where(
+            sql`${Income.createdBy} = ${user?.primaryEmailAddress?.emailAddress as string}
+              AND EXTRACT(MONTH FROM TO_DATE(${Income.transactionDate}, 'MM-DD-YYYY')) = ${month}
+              AND EXTRACT(YEAR FROM TO_DATE(${Income.transactionDate}, 'MM-DD-YYYY')) = ${year}`
           )
+          .groupBy(sql`day`)
+          .execute();
+
+        // Fetch expenses data for the month
+        const expensesData = await db
+          .select({
+            day: sql<number>`EXTRACT(DAY FROM TO_DATE(${Expenses.createdAt}, 'MM-DD-YYYY')) AS day`,
+            total: sql<number>`COALESCE(SUM(${Expenses.amount}), 0) AS total`,
+          })
+          .from(Expenses)
           .leftJoin(Categories, eq(Expenses.categoryId, Categories.id))
+          .where(
+            sql`${Categories.createdBy} = ${user?.primaryEmailAddress?.emailAddress as string}
+              AND EXTRACT(MONTH FROM TO_DATE(${Expenses.createdAt}, 'MM-DD-YYYY')) = ${month}
+              AND EXTRACT(YEAR FROM TO_DATE(${Expenses.createdAt}, 'MM-DD-YYYY')) = ${year}`
+          )
+          .groupBy(sql`day`)
+          .execute();
+
+        // Merge data
+        incomeData.forEach((item: any) => {
+          const dayIndex = item.day - 1;
+          if (dayIndex >= 0 && dayIndex < dailyData.length) {
+            dailyData[dayIndex].Income = Number(item.total);
+          }
+        });
+
+        expensesData.forEach((item: any) => {
+          const dayIndex = item.day - 1;
+          if (dayIndex >= 0 && dayIndex < dailyData.length) {
+            dailyData[dayIndex].Expenses = Number(item.total);
+          }
+        });
+        
+        console.log('Monthly data result:', dailyData);
+        setBarChartData(dailyData);
+      } else {
+        // Fetch yearly data
+        const incomeData = await db
+          .select({
+            month: sql<number>`EXTRACT(MONTH FROM TO_DATE(${Income.transactionDate}, 'MM-DD-YYYY')) AS month`,
+            year: sql<number>`EXTRACT(YEAR FROM TO_DATE(${Income.transactionDate}, 'MM-DD-YYYY')) AS year`,
+            totalIncome: sql<number>`COALESCE(SUM(${Income.amount}), 0)::NUMERIC AS totalIncome`,
+          })
+          .from(Income)
           .where(eq(Income.createdBy, user?.primaryEmailAddress?.emailAddress as string))
           .groupBy(sql`year`, sql`month`)
-          .orderBy(sql`year`, sql`month`)
-          .execute() as BarChartData[];
+          .execute();
 
-        if (result.length === 0) {
-          console.warn("No data found for the selected year.");
-        }
+        const expensesData = await db
+          .select({
+            month: sql<number>`EXTRACT(MONTH FROM TO_DATE(${Expenses.createdAt}, 'MM-DD-YYYY')) AS month`,
+            year: sql<number>`EXTRACT(YEAR FROM TO_DATE(${Expenses.createdAt}, 'MM-DD-YYYY')) AS year`,
+            totalExpenses: sql<number>`COALESCE(SUM(${Expenses.amount}), 0)::NUMERIC AS totalExpenses`,
+          })
+          .from(Expenses)
+          .leftJoin(Categories, eq(Expenses.categoryId, Categories.id))
+          .where(eq(Categories.createdBy, user?.primaryEmailAddress?.emailAddress as string))
+          .groupBy(sql`year`, sql`month`)
+          .execute();
 
-        const allMonthsData = monthNames.map((month) => ({
+        const allMonthsData = monthNames.map((month, index) => ({
           name: month,
           Income: 0,
           Expenses: 0,
         }));
 
-        result.forEach(item => {
-          allMonthsData[item.month - 1] = {
-            name: monthNames[item.month - 1],
-            Income: Number(item.totalIncome),
-            Expenses: Number(item.totalExpenses),
-          };
+        incomeData.forEach((item: any) => {
+          const monthIndex = item.month - 1;
+          if (monthIndex >= 0 && monthIndex < allMonthsData.length) {
+            allMonthsData[monthIndex].Income = Number(item.totalIncome);
+          }
+        });
+
+        expensesData.forEach((item: any) => {
+          const monthIndex = item.month - 1;
+          if (monthIndex >= 0 && monthIndex < allMonthsData.length) {
+            allMonthsData[monthIndex].Expenses = Number(item.totalExpenses);
+          }
         });
 
         setBarChartData(allMonthsData);
-        console.log("Monthly Data for Year:", allMonthsData);
       }
     } catch (error) {
       console.error("Error fetching bar chart data:", error);
     }
   };
+
 
   useEffect(() => {
     getBarChartData(); // Call the function to fetch bar chart data whenever period or timeframe changes
@@ -367,7 +397,7 @@ function Page() {
           </div>
         </div>
       </div>
-      <Overview dateRange={dateRange} setDateRange={setDateRange} />
+      <Overview dateRange={dateRange} setDateRange={setGlobalDateRange} />
       <CardInfo totalIncome={totalIncome} totalExpenses={totalExpenses} />
       {/* Category Stats and Chart */}
       <div className="grid grid-cols-1 md:grid-cols-3 mx-10 my-5 gap-5">
@@ -390,7 +420,7 @@ function Page() {
         <div className="p-4 border rounded-lg flex flex-col gap-4">
           {/* HistoryPeriodSelector and badges */}
           <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-            <HistoryPeriodSelector
+          <HistoryPeriodSelector
               period={period}
               setPeriod={setPeriod}
               timeframe={timeframe}
@@ -418,37 +448,33 @@ function Page() {
                 <>
                   <XAxis
                     dataKey="day"
-                    tickFormatter={(day) => {
-                      const date = new Date(period.year, period.month - 1, day);
-                      // Display only specific days or the first and last of the month
-                      if (day === 1 || day === new Date(period.year, period.month, 0).getDate() || day % 5 === 0) {
-                        return date.toLocaleDateString('en-US', { month: 'long', day: 'numeric' });
-                      }
-                      return '';
-                    }}
+                    tickFormatter={(day) => `${day}`}
+                    label={{ value: 'Day', position: 'insideBottomRight', offset: -5 }}
                   />
                   <YAxis />
                   <Tooltip
                     formatter={(value, name) => {
-                      // Customize tooltip content
-                      return [`${value}`, name];
+                      return [`$${value}`, name === 'Income' ? 'Income' : 'Expenses'];
                     }}
+                    labelFormatter={(day) => `Day ${day}`}
                   />
-                  <Bar dataKey="totalIncome" fill="var(--color-income)" radius={4} />
-                  <Bar dataKey="totalExpenses" fill="var(--color-expenses)" radius={4} />
+                  <Bar dataKey="Income" fill="#34d399" radius={4} />
+                  <Bar dataKey="Expenses" fill="#fb923c" radius={4} />
                 </>
               ) : (
                 <>
-                  <XAxis dataKey="name" /> {/* Assuming monthly data uses 'name' for month name */}
+                  <XAxis 
+                    dataKey="name"
+                    label={{ value: 'Month', position: 'insideBottomRight', offset: -5 }}
+                  />
                   <YAxis />
                   <Tooltip
                     formatter={(value, name) => {
-                      // Customize tooltip content
-                      return [`${value}`, name];
+                      return [`$${value}`, name === 'Income' ? 'Income' : 'Expenses'];
                     }}
                   />
-                  <Bar dataKey="Income" fill="var(--color-income)" radius={4} />
-                  <Bar dataKey="Expenses" fill="var(--color-expenses)" radius={4} />
+                  <Bar dataKey="Income" fill="#34d399" radius={4} />
+                  <Bar dataKey="Expenses" fill="#fb923c" radius={4} />
                 </>
               )}
             </BarChart>
