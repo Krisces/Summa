@@ -77,8 +77,8 @@ This project aims to provide a comprehensive budgeting tool that not only tracks
 
 ### Built With
 
-* [![Next][Next.js]][Next-url]
-* [![React][React.js]][React-url]
+* Next.js
+* React
 * Drizzle-ORM
 * Tailwind CSS
 * Clerk
@@ -136,9 +136,6 @@ Follow these steps to install and set up your app:
 - [x] Enhance the categories page with additional features (e.g., setting recurring budgets)
 - [ ] Add more detailed expense tracking options
 - [ ] Expand data analytics features with machine learning for spending predictions
-
-
-See the [open issues](https://github.com/othneildrew/Best-README-Template/issues) for a full list of proposed features (and known issues).
 
 <p align="right">(<a href="#readme-top">back to top</a>)</p>
 
